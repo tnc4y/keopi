@@ -4,6 +4,7 @@ import 'core/theme/app_colors.dart';
 import 'core/data/keopi_data.dart';
 import 'core/providers/app_provider.dart';
 import 'core/providers/cart_provider.dart';
+import 'features/checkout/tracking_screen.dart';
 import 'features/menu/product_detail_screen.dart';
 import 'features/stores/stores_screen.dart';
 
@@ -50,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
               SliverToBoxAdapter(child: _buildHeader(context)),
+              if (widget.app.activeOrderId != null)
+                SliverToBoxAdapter(child: _buildActiveOrderBanner(context)),
               SliverToBoxAdapter(child: _buildGreeting()),
               SliverToBoxAdapter(child: _buildLoyaltyCard()),
               SliverToBoxAdapter(child: _buildCampaigns()),
@@ -78,6 +81,67 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActiveOrderBanner(BuildContext context) {
+    final status = widget.app.activeOrderStatus;
+    final orderId = widget.app.activeOrderId!;
+    final total = widget.app.activeOrderTotal;
+
+    final bool isReady = status == 'ready' || status == 'completed';
+    final bool isPreparing = status == 'preparing';
+
+    final String title = isReady
+        ? 'Siparişin hazır! 🎉'
+        : isPreparing
+            ? 'Hazırlanıyor…'
+            : 'Sipariş alındı';
+    final String sub = isReady
+        ? 'Tezgahtan alabilirsin'
+        : isPreparing
+            ? 'Baristamız çalışıyor'
+            : 'Baristaya iletildi';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => TrackingScreen(orderId: orderId, total: total)),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isReady ? AppColors.accent : AppColors.coffee,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(
+            children: [
+              if (isReady)
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 32)
+              else
+                const SizedBox(
+                  width: 28, height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text(sub, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => widget.app.clearActiveOrder(),
+                child: Icon(Icons.close_rounded, size: 18, color: Colors.white.withValues(alpha: 0.7)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

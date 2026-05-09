@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../core/services/firestore_service.dart';
+import 'dart:async';
 import 'tracking_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -324,6 +325,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         payMethod: _method,
       );
       widget.cart.clear();
+      widget.app.setActiveOrder(orderId, total);
+      // Barista uygulaması yoksa simülasyon — arka planda çalıştır
+      unawaited(FirestoreService.simulateOrderProgress(orderId));
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => TrackingScreen(orderId: orderId, total: total)),

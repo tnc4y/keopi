@@ -85,34 +85,52 @@ class FirestoreService {
   // ── Orders ────────────────────────────────────────────────────────────────
 
   static Stream<List<KeopiPastOrder>> streamOrders() {
+    // where + orderBy farklı field → composite index gerektirir.
+    // Bunu önlemek için orderBy kaldırılıp client-side sort yapıyoruz.
     return _db
         .collection('orders')
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) {
-              final m = d.data();
-              final rawItems = m['items'] as List<dynamic>;
-              final items = rawItems.map((i) {
-                final item = i as Map<String, dynamic>;
-                return KeopiPastOrderItem(
-                  name: item['name'] as String,
-                  qty: (item['qty'] as num).toInt(),
-                  mods: item['mods'] as String? ?? '',
-                );
-              }).toList();
+        .map((snap) {
+          final pairs = snap.docs.map((d) {
+            final m = d.data();
+            final ts = m['createdAt'] as Timestamp?;
+            final millis = ts?.millisecondsSinceEpoch ?? (m['createdAtMs'] as num?)?.toInt() ?? 0;
+            final dateStr = ts != null ? _fmtDate(ts.toDate()) : 'Şimdi';
 
-              final ts = m['createdAt'] as Timestamp?;
-              final dateStr = ts != null ? _fmtDate(ts.toDate()) : '';
-
-              return KeopiPastOrder(
-                id: d.id,
-                date: dateStr,
-                store: m['storeName'] as String,
-                total: (m['total'] as num).toInt(),
-                items: items,
+            final rawItems = m['items'] as List<dynamic>? ?? [];
+            final items = rawItems.map((i) {
+              final item = i as Map<String, dynamic>;
+              return KeopiPastOrderItem(
+                name: item['name'] as String? ?? '',
+                qty: (item['qty'] as num?)?.toInt() ?? 1,
+                mods: item['mods'] as String? ?? '',
               );
-            }).toList());
+            }).toList();
+
+            final order = KeopiPastOrder(
+              id: d.id,
+              date: dateStr,
+              store: m['storeName'] as String? ?? '',
+              total: (m['total'] as num?)?.toInt() ?? 0,
+              items: items,
+            );
+            return (order: order, millis: millis);
+          }).toList();
+
+          pairs.sort((a, b) => b.millis.compareTo(a.millis));
+          return pairs.map((p) => p.order).toList();
+        });
+  }
+
+  // Barista uygulaması olmadan siparişi simüle eder
+  static Future<void> simulateOrderProgress(String orderId) async {
+    await Future.delayed(const Duration(seconds: 4));
+    await _db.collection('orders').doc(orderId).update({'status': 'preparing'});
+    await Future.delayed(const Duration(minutes: 2, seconds: 30));
+    await _db.collection('orders').doc(orderId).update({'status': 'ready'});
+    await Future.delayed(const Duration(minutes: 1));
+    await _db.collection('orders').doc(orderId).update({'status': 'completed'});
   }
 
   static Stream<String> streamOrderStatus(String orderId) {
@@ -121,6 +139,14 @@ class FirestoreService {
         .doc(orderId)
         .snapshots()
         .map((d) => (d.data()?['status'] as String?) ?? 'pending');
+  }
+
+  static Stream<Map<String, dynamic>> streamOrderDoc(String orderId) {
+    return _db
+        .collection('orders')
+        .doc(orderId)
+        .snapshots()
+        .map((d) => d.data() ?? {});
   }
 
   // ── Place order ───────────────────────────────────────────────────────────
@@ -164,6 +190,7 @@ class FirestoreService {
       'total': total,
       'payMethod': payMethod,
       'status': 'pending',
+      'createdAtMs': DateTime.now().millisecondsSinceEpoch,
       'createdAt': FieldValue.serverTimestamp(),
     });
 
