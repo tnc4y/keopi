@@ -244,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text('Kategoriler', style: GoogleFonts.instrumentSerif(fontSize: 18, color: AppColors.coffee, fontWeight: FontWeight.w600)),
         ),
         SizedBox(
-          height: 100,
+          height: 110,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
@@ -265,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(cat.emoji, style: const TextStyle(fontSize: 26)),
+                      Text(cat.emoji, style: const TextStyle(fontSize: 26, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji'])),
                       const SizedBox(height: 6),
                       Text(cat.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.coffee), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],
@@ -460,10 +460,10 @@ class _ProductCardLg extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 120,
+              height: 100,
               margin: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(14)),
-              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 52))),
+              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 44, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji']))),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 14),
@@ -517,7 +517,7 @@ class _ProductRow extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
-              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30))),
+              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji']))),
             ),
             const SizedBox(width: 14),
             Expanded(

@@ -112,7 +112,7 @@ class _MenuScreenRootState extends State<MenuScreenRoot> {
                           ),
                           child: Row(
                             children: [
-                              Text(c.emoji, style: const TextStyle(fontSize: 13)),
+                              Text(c.emoji, style: const TextStyle(fontSize: 13, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji'])),
                               const SizedBox(width: 6),
                               Text(c.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? AppColors.cream : AppColors.coffee)),
                             ],
@@ -219,7 +219,7 @@ class _MenuProductRow extends StatelessWidget {
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
-              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30))),
+              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji']))),
             ),
             const SizedBox(width: 14),
             Expanded(

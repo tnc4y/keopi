@@ -70,7 +70,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           height: 320,
           color: AppColors.cream,
           child: Center(
-            child: Text(widget.product.emoji, style: const TextStyle(fontSize: 110)),
+            child: Text(widget.product.emoji, style: const TextStyle(fontSize: 110, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji'])),
           ),
         ),
         Positioned(
@@ -94,9 +94,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildBody() {
-    return Container(
-      margin: const EdgeInsets.only(top: -28),
-      decoration: const BoxDecoration(
+    return Transform.translate(
+      offset: const Offset(0, -28),
+      child: Container(
+        decoration: const BoxDecoration(
         color: AppColors.bg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -147,6 +148,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           _section('Not (opsiyonel)', _buildNote()),
         ],
       ),
+      ),
     );
   }
 
@@ -170,7 +172,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 children: [
                   Text(
                     s.id == 'small' ? '🥤' : s.id == 'medium' ? '☕' : '🧋',
-                    style: TextStyle(fontSize: selected ? 22 : 18),
+                    style: TextStyle(fontSize: selected ? 22 : 18, fontFamilyFallback: const ['Apple Color Emoji', 'Noto Color Emoji']),
                   ),
                   const SizedBox(height: 4),
                   Text(s.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? AppColors.cream : AppColors.coffee)),
