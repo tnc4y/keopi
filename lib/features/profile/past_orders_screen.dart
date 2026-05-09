@@ -2,51 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
+import '../../core/providers/app_provider.dart';
 
 class PastOrdersScreen extends StatelessWidget {
-  const PastOrdersScreen({super.key});
+  final AppProvider app;
+  const PastOrdersScreen({super.key, required this.app});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 4)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 20, 14),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 38, height: 38,
-                      decoration: BoxDecoration(color: AppColors.card, shape: BoxShape.circle, border: Border.all(color: AppColors.line)),
-                      child: const Icon(Icons.chevron_left_rounded, color: AppColors.coffee),
+    return ListenableBuilder(
+      listenable: app,
+      builder: (context, _) {
+        final orders = app.orders;
+        return Scaffold(
+          backgroundColor: AppColors.bg,
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 4)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 20, 14),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 38, height: 38,
+                          decoration: BoxDecoration(color: AppColors.card, shape: BoxShape.circle, border: Border.all(color: AppColors.line)),
+                          child: const Icon(Icons.chevron_left_rounded, color: AppColors.coffee),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('Geçmiş siparişler', style: GoogleFonts.instrumentSerif(fontSize: 26, color: AppColors.coffee)),
+                    ],
+                  ),
+                ),
+              ),
+              if (orders.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(child: Text('Henüz siparişin yok.', style: TextStyle(fontSize: 14, color: AppColors.muted))),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _OrderCard(order: orders[i]),
+                      ),
+                      childCount: orders.length,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text('Geçmiş siparişler', style: GoogleFonts.instrumentSerif(fontSize: 26, color: AppColors.coffee)),
-                ],
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (ctx, i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _OrderCard(order: KeopiData.pastOrders[i]),
                 ),
-                childCount: KeopiData.pastOrders.length,
-              ),
-            ),
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -70,7 +86,7 @@ class _OrderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.id.toUpperCase(), style: const TextStyle(fontSize: 11, color: AppColors.muted, letterSpacing: 0.3)),
+                    Text(order.id.substring(0, 8).toUpperCase(), style: const TextStyle(fontSize: 11, color: AppColors.muted, letterSpacing: 0.3)),
                     const SizedBox(height: 1),
                     Text(order.date, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.coffee)),
                   ],

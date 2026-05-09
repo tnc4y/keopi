@@ -4,10 +4,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
 
 class StoresScreen extends StatelessWidget {
+  final List<KeopiStore> stores;
   final KeopiStore currentStore;
   final ValueChanged<KeopiStore> onPick;
 
-  const StoresScreen({super.key, required this.currentStore, required this.onPick});
+  const StoresScreen({super.key, required this.stores, required this.currentStore, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +92,7 @@ class StoresScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text('YAKINDAKI MAĞAZALAR · ${KeopiData.stores.length}', style: const TextStyle(fontSize: 12, color: AppColors.muted, letterSpacing: 0.3)),
+              child: Text('YAKINDAKI MAĞAZALAR · ${stores.length}', style: const TextStyle(fontSize: 12, color: AppColors.muted, letterSpacing: 0.3)),
             ),
           ),
           // Store list
@@ -100,7 +101,7 @@ class StoresScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (ctx, i) {
-                  final s = KeopiData.stores[i];
+                  final s = stores[i];
                   final selected = currentStore.id == s.id;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -161,7 +162,7 @@ class StoresScreen extends StatelessWidget {
                     ),
                   );
                 },
-                childCount: KeopiData.stores.length,
+                childCount: stores.length,
               ),
             ),
           ),

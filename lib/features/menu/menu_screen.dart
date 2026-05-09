@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/providers/cart_provider.dart';
 import 'product_detail_screen.dart';
 import '../cart/cart_screen.dart';
 
 class MenuScreenRoot extends StatefulWidget {
   final CartProvider cart;
-  const MenuScreenRoot({super.key, required this.cart});
+  final AppProvider app;
+  const MenuScreenRoot({super.key, required this.cart, required this.app});
 
   @override
   State<MenuScreenRoot> createState() => _MenuScreenRootState();
@@ -20,11 +22,12 @@ class _MenuScreenRootState extends State<MenuScreenRoot> {
   final _searchCtrl = TextEditingController();
 
   List<KeopiProduct> get _filtered {
+    final products = widget.app.products;
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
-      return KeopiData.products.where((p) => p.name.toLowerCase().contains(q) || p.nameEn.toLowerCase().contains(q)).toList();
+      return products.where((p) => p.name.toLowerCase().contains(q) || p.nameEn.toLowerCase().contains(q)).toList();
     }
-    return KeopiData.products.where((p) => p.category == _cat).toList();
+    return products.where((p) => p.category == _cat).toList();
   }
 
   @override
@@ -36,7 +39,7 @@ class _MenuScreenRootState extends State<MenuScreenRoot> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    final catName = _query.isNotEmpty ? '"$_query"' : KeopiData.categories.firstWhere((c) => c.id == _cat).name;
+    final catName = _query.isNotEmpty ? '"$_query"' : KeopiData.categories.firstWhere((c) => c.id == _cat, orElse: () => KeopiData.categories.first).name;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -155,7 +158,7 @@ class _MenuScreenRootState extends State<MenuScreenRoot> {
                         child: _MenuProductRow(
                           product: filtered[i],
                           onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => ProductDetailScreen(product: filtered[i], cart: widget.cart),
+                            builder: (_) => ProductDetailScreen(product: filtered[i], cart: widget.cart, app: widget.app),
                           )),
                         ),
                       ),
@@ -174,7 +177,7 @@ class _MenuScreenRootState extends State<MenuScreenRoot> {
               return Positioned(
                 left: 20, right: 20, bottom: 20,
                 child: GestureDetector(
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CartScreen(cart: widget.cart))),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CartScreen(cart: widget.cart, app: widget.app))),
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(color: AppColors.coffee, borderRadius: BorderRadius.circular(999)),

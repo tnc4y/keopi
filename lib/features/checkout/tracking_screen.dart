@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/services/firestore_service.dart';
 
 class TrackingScreen extends StatefulWidget {
+  final String orderId;
   final int total;
-  const TrackingScreen({super.key, required this.total});
+  const TrackingScreen({super.key, required this.orderId, required this.total});
 
   @override
   State<TrackingScreen> createState() => _TrackingScreenState();
@@ -13,31 +15,35 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   int _step = 0;
-  Timer? _timer;
+  StreamSubscription<String>? _statusSub;
 
-  final _steps = const [
+  static const _steps = [
     _Step('Sipariş alındı', 'Baristaya iletildi'),
     _Step('Hazırlanıyor', 'Espresso çekiliyor…'),
     _Step('Hazır! 🎉', 'Tezgahtan alabilirsin'),
   ];
 
+  static const _statusToStep = {
+    'pending': 0,
+    'preparing': 1,
+    'ready': 2,
+    'completed': 2,
+  };
+
   @override
   void initState() {
     super.initState();
-    _scheduleNext();
-  }
-
-  void _scheduleNext() {
-    if (_step < 2) {
-      _timer = Timer(const Duration(seconds: 3), () {
-        if (mounted) setState(() { _step++; _scheduleNext(); });
-      });
-    }
+    _statusSub = FirestoreService.streamOrderStatus(widget.orderId).listen(
+      (status) {
+        if (mounted) setState(() => _step = _statusToStep[status] ?? 0);
+      },
+      onError: (_) {},
+    );
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _statusSub?.cancel();
     super.dispose();
   }
 
@@ -69,7 +75,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
               SliverToBoxAdapter(child: _buildHero(done)),
               SliverToBoxAdapter(child: _buildSteps()),
-              SliverToBoxAdapter(child: _buildStoreCard()),
+              SliverToBoxAdapter(child: _buildOrderIdCard()),
               SliverToBoxAdapter(child: _buildOrderSummary()),
               const SliverToBoxAdapter(child: SizedBox(height: 130)),
             ],
@@ -95,15 +101,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 : Stack(
                     alignment: Alignment.center,
                     children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: 1),
-                        duration: const Duration(seconds: 10),
-                        builder: (_, v, _) => CircularProgressIndicator(
-                          value: null,
-                          strokeWidth: 3,
-                          color: AppColors.accent,
-                          backgroundColor: AppColors.tagBg,
-                        ),
+                      const CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: AppColors.accent,
+                        backgroundColor: AppColors.tagBg,
                       ),
                       const Text('☕', style: TextStyle(fontSize: 50)),
                     ],
@@ -132,7 +133,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         children: _steps.asMap().entries.map((e) {
           final i = e.key;
           final s = e.value;
-          final done = i <= _step;
+          final isDone = i <= _step;
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -142,10 +143,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     width: 28, height: 28,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: done ? AppColors.accent : AppColors.card,
-                      border: Border.all(color: done ? AppColors.accent : AppColors.lineStrong, width: 2),
+                      color: isDone ? AppColors.accent : AppColors.card,
+                      border: Border.all(color: isDone ? AppColors.accent : AppColors.lineStrong, width: 2),
                     ),
-                    child: done ? const Icon(Icons.check_rounded, size: 14, color: Colors.white) : null,
+                    child: isDone ? const Icon(Icons.check_rounded, size: 14, color: Colors.white) : null,
                   ),
                   if (i < _steps.length - 1)
                     Container(width: 2, height: 36, color: i < _step ? AppColors.accent : AppColors.lineStrong),
@@ -158,7 +159,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(s.label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: done ? AppColors.coffee : AppColors.muted)),
+                      Text(s.label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDone ? AppColors.coffee : AppColors.muted)),
                       Text(s.sub, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
                     ],
                   ),
@@ -171,7 +172,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildStoreCard() {
+  Widget _buildOrderIdCard() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: Container(
@@ -179,18 +180,17 @@ class _TrackingScreenState extends State<TrackingScreen> {
         decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
         child: Row(
           children: [
-            Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 18)),
+            Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.receipt_long_outlined, color: AppColors.accent, size: 18)),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bağdat Caddesi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.coffee)),
-                  Text('Bağdat Cd. No:142, Kadıköy', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                  const Text('SİPARİŞ NO', style: TextStyle(fontSize: 10, color: AppColors.muted, letterSpacing: 0.3)),
+                  Text(widget.orderId.substring(0, 8).toUpperCase(), style: GoogleFonts.jetBrainsMono(fontSize: 13, color: AppColors.coffee, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            const Text('Yol tarifi', style: TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
           ],
         ),
       ),

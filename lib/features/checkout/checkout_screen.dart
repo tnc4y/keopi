@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/data/keopi_data.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/providers/cart_provider.dart';
+import '../../core/services/firestore_service.dart';
 import 'tracking_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final CartProvider cart;
-  const CheckoutScreen({super.key, required this.cart});
+  final AppProvider app;
+  const CheckoutScreen({super.key, required this.cart, required this.app});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -17,32 +19,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _method = 'saved';
   int _tip = 0;
   bool _usePoints = false;
-  final _user = KeopiData.user;
+  bool _placing = false;
 
   int get subtotal => widget.cart.subtotal;
-  int get pointsDiscount => _usePoints ? (_user.points ~/ 10).clamp(0, 50) : 0;
+  int get pointsDiscount => _usePoints ? (widget.app.user.points ~/ 10).clamp(0, 50) : 0;
   int get total => subtotal + _tip - pointsDiscount;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 4)),
-              SliverToBoxAdapter(child: _buildHeader(context)),
-              SliverToBoxAdapter(child: _buildPickup()),
-              SliverToBoxAdapter(child: _buildSection('Ödeme yöntemi', _buildPayMethods())),
-              SliverToBoxAdapter(child: _buildSection('Sadakat', _buildPoints())),
-              SliverToBoxAdapter(child: _buildSection("Barista'ya bahşiş", _buildTip())),
-              SliverToBoxAdapter(child: _buildSummaryCard()),
-              const SliverToBoxAdapter(child: SizedBox(height: 130)),
-            ],
-          ),
-          Positioned(left: 0, right: 0, bottom: 0, child: _buildCTA(context)),
-        ],
+    return ListenableBuilder(
+      listenable: widget.app,
+      builder: (context, _) => Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 4)),
+                SliverToBoxAdapter(child: _buildHeader(context)),
+                SliverToBoxAdapter(child: _buildPickup()),
+                SliverToBoxAdapter(child: _buildSection('Ödeme yöntemi', _buildPayMethods())),
+                SliverToBoxAdapter(child: _buildSection('Sadakat', _buildPoints())),
+                SliverToBoxAdapter(child: _buildSection("Barista'ya bahşiş", _buildTip())),
+                SliverToBoxAdapter(child: _buildSummaryCard()),
+                const SliverToBoxAdapter(child: SizedBox(height: 130)),
+              ],
+            ),
+            Positioned(left: 0, right: 0, bottom: 0, child: _buildCTA(context)),
+          ],
+        ),
       ),
     );
   }
@@ -68,6 +73,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildPickup() {
+    final stores = widget.app.stores;
+    final store = stores.isNotEmpty ? stores.first : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
       child: Container(
@@ -77,12 +84,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 18)),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bağdat Caddesi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.coffee)),
-                  Text('Bağdat Cd. No:142, Kadıköy', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                  Text(store?.name ?? 'Mağaza', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.coffee)),
+                  Text(store?.address ?? '', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
                 ],
               ),
             ),
@@ -147,6 +154,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildPoints() {
+    final user = widget.app.user;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
@@ -159,7 +167,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Puanlarımı kullan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.coffee)),
-                Text('Bakiye: ${_user.points} puan → ₺${_user.points ~/ 10} indirim', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                Text('Bakiye: ${user.points} puan → ₺${user.points ~/ 10} indirim', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
               ],
             ),
           ),
@@ -272,29 +280,63 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       decoration: const BoxDecoration(color: AppColors.card, border: Border(top: BorderSide(color: AppColors.line))),
       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 14),
       child: GestureDetector(
-        onTap: () {
-          widget.cart.clear();
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => TrackingScreen(total: total)),
-            (r) => r.isFirst,
-          );
-        },
+        onTap: _placing ? null : () => _placeOrder(context),
         child: Container(
           width: double.infinity, height: 56,
-          decoration: BoxDecoration(color: AppColors.coffee, borderRadius: BorderRadius.circular(999)),
+          decoration: BoxDecoration(color: _placing ? AppColors.muted : AppColors.coffee, borderRadius: BorderRadius.circular(999)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_method == 'apple') const Icon(Icons.apple_rounded, size: 18, color: AppColors.cream),
-              if (_method == 'apple') const SizedBox(width: 8),
-              Text(
-                _method == 'qr' ? 'QR oluştur' : '₺$total öde',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.cream),
-              ),
+              if (_placing)
+                const SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              else ...[
+                if (_method == 'apple') const Icon(Icons.apple_rounded, size: 18, color: AppColors.cream),
+                if (_method == 'apple') const SizedBox(width: 8),
+                Text(
+                  _method == 'qr' ? 'QR oluştur' : '₺$total öde',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.cream),
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _placeOrder(BuildContext context) async {
+    setState(() => _placing = true);
+    try {
+      final stores = widget.app.stores;
+      final store = stores.isNotEmpty ? stores.first : null;
+      final orderId = await FirestoreService.placeOrder(
+        storeId: store?.id ?? 's1',
+        storeName: store?.name ?? 'Keopi',
+        storeAddress: store?.address ?? '',
+        items: widget.cart.items.toList(),
+        subtotal: subtotal,
+        tip: _tip,
+        pointsDiscount: pointsDiscount,
+        total: total,
+        payMethod: _method,
+      );
+      widget.cart.clear();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => TrackingScreen(orderId: orderId, total: total)),
+          (r) => r.isFirst,
+        );
+      }
+    } catch (_) {
+      setState(() => _placing = false);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sipariş gönderilemedi, tekrar dene.')),
+        );
+      }
+    }
   }
 }

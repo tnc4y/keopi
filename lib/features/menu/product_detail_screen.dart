@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/providers/cart_provider.dart';
 import '../cart/cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final KeopiProduct product;
   final CartProvider cart;
+  final AppProvider app;
 
-  const ProductDetailScreen({super.key, required this.product, required this.cart});
+  const ProductDetailScreen({super.key, required this.product, required this.cart, required this.app});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -335,7 +337,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ));
                 Navigator.pop(context);
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => CartScreen(cart: widget.cart),
+                  builder: (_) => CartScreen(cart: widget.cart, app: widget.app),
                 ));
               },
               child: Container(

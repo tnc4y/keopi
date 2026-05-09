@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:keopi/core/providers/app_provider.dart';
 import 'package:keopi/core/providers/cart_provider.dart';
 import 'package:keopi/core/theme/app_colors.dart';
 import 'package:keopi/core/theme/app_theme.dart';
@@ -11,6 +12,7 @@ class KeopiApp extends StatelessWidget {
   const KeopiApp({super.key});
 
   static final CartProvider _cart = CartProvider();
+  static final AppProvider _app = AppProvider();
 
   @override
   Widget build(BuildContext context) {
@@ -18,14 +20,15 @@ class KeopiApp extends StatelessWidget {
       title: 'keopi',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: AppShell(cart: _cart),
+      home: AppShell(cart: _cart, app: _app),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
   final CartProvider cart;
-  const AppShell({super.key, required this.cart});
+  final AppProvider app;
+  const AppShell({super.key, required this.cart, required this.app});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -41,10 +44,14 @@ class _AppShellState extends State<AppShell> {
       body: IndexedStack(
         index: _tab,
         children: [
-          HomeScreen(cart: widget.cart, onTabChange: (i) => setState(() => _tab = i)),
-          MenuScreenRoot(cart: widget.cart),
-          const LoyaltyScreen(),
-          const ProfileScreen(),
+          HomeScreen(
+            cart: widget.cart,
+            app: widget.app,
+            onTabChange: (i) => setState(() => _tab = i),
+          ),
+          MenuScreenRoot(cart: widget.cart, app: widget.app),
+          LoyaltyScreen(app: widget.app),
+          ProfileScreen(app: widget.app, cart: widget.cart),
         ],
       ),
       bottomNavigationBar: ListenableBuilder(

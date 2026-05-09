@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/providers/cart_provider.dart';
 import '../checkout/checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   final CartProvider cart;
-  const CartScreen({super.key, required this.cart});
+  final AppProvider app;
+  const CartScreen({super.key, required this.cart, required this.app});
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +195,7 @@ class CartScreen extends StatelessWidget {
       decoration: const BoxDecoration(color: AppColors.card, border: Border(top: BorderSide(color: AppColors.line))),
       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 14),
       child: GestureDetector(
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CheckoutScreen(cart: cart))),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CheckoutScreen(cart: cart, app: app))),
         child: Container(
           width: double.infinity, height: 56,
           decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(999)),

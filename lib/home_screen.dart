@@ -2,76 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_colors.dart';
 import 'core/data/keopi_data.dart';
+import 'core/providers/app_provider.dart';
 import 'core/providers/cart_provider.dart';
 import 'features/menu/product_detail_screen.dart';
 import 'features/stores/stores_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final CartProvider cart;
+  final AppProvider app;
   final ValueChanged<int> onTabChange;
 
-  const HomeScreen({super.key, required this.cart, required this.onTabChange});
+  const HomeScreen({
+    super.key,
+    required this.cart,
+    required this.app,
+    required this.onTabChange,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _user = KeopiData.user;
-  KeopiStore _store = KeopiData.stores[0];
+  KeopiStore? _store;
+
+  KeopiStore get _currentStore =>
+      _store ?? (widget.app.stores.isNotEmpty ? widget.app.stores.first : KeopiData.stores.first);
 
   @override
   Widget build(BuildContext context) {
-    final popular = KeopiData.products.where((p) => p.category == 'popular').toList();
-    final newOnes = KeopiData.products.where((p) => p.tag == 'Yeni').toList();
+    return ListenableBuilder(
+      listenable: widget.app,
+      builder: (context, _) {
+        if (widget.app.loading) {
+          return const Scaffold(
+            backgroundColor: AppColors.bg,
+            body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
-          // Header
-          SliverToBoxAdapter(child: _buildHeader(context)),
-          // Greeting
-          SliverToBoxAdapter(child: _buildGreeting()),
-          // Loyalty mini-card
-          SliverToBoxAdapter(child: _buildLoyaltyCard()),
-          // Campaign carousel
-          SliverToBoxAdapter(child: _buildCampaigns()),
-          // Quick actions
-          SliverToBoxAdapter(child: _buildQuickActions()),
-          // Categories
-          SliverToBoxAdapter(child: _buildCategories()),
-          // Popular header
-          SliverToBoxAdapter(child: _sectionHeader('En popüler', onAll: () => widget.onTabChange(1))),
-          // Popular products
-          SliverToBoxAdapter(child: _buildPopular(popular)),
-          // New header
-          SliverToBoxAdapter(child: _sectionHeader('Yeni keşfet', trailing: _tag('YENİ'))),
-          // New products
-          SliverToBoxAdapter(child: _buildNewProducts(newOnes)),
-          // Tagline
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-              child: Center(
-                child: Text(
-                  '"Bir fincan keopi, mahallenin sıcaklığı."',
-                  style: GoogleFonts.instrumentSerif(
-                    fontSize: 15,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.muted,
+        final popular = widget.app.popularProducts;
+        final newOnes = widget.app.newProducts;
+
+        return Scaffold(
+          backgroundColor: AppColors.bg,
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
+              SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(child: _buildGreeting()),
+              SliverToBoxAdapter(child: _buildLoyaltyCard()),
+              SliverToBoxAdapter(child: _buildCampaigns()),
+              SliverToBoxAdapter(child: _buildQuickActions()),
+              SliverToBoxAdapter(child: _buildCategories()),
+              SliverToBoxAdapter(child: _sectionHeader('En popüler', onAll: () => widget.onTabChange(1))),
+              SliverToBoxAdapter(child: _buildPopular(popular)),
+              SliverToBoxAdapter(child: _sectionHeader('Yeni keşfet', trailing: _tag('YENİ'))),
+              SliverToBoxAdapter(child: _buildNewProducts(newOnes)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                  child: Center(
+                    child: Text(
+                      '"Bir fincan keopi, mahallenin sıcaklığı."',
+                      style: GoogleFonts.instrumentSerif(
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.muted,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildHeader(BuildContext context) {
+    final store = _currentStore;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
       child: Row(
@@ -80,7 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => StoresScreen(
-                  currentStore: _store,
+                  stores: widget.app.stores,
+                  currentStore: store,
                   onPick: (s) {
                     Navigator.pop(context);
                     setState(() => _store = s);
@@ -95,10 +107,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('SİPARİŞ ALAN', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500, letterSpacing: 0.2)),
+                    const Text('SİPARİŞ ALAN', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500, letterSpacing: 0.2)),
                     Row(
                       children: [
-                        Text(_store.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee)),
+                        Text(store.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee)),
                         const Icon(Icons.chevron_right, size: 14, color: AppColors.coffee),
                       ],
                     ),
@@ -117,14 +129,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGreeting() {
+    final user = widget.app.user;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Günaydın', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          const Text('Günaydın', style: TextStyle(fontSize: 13, color: AppColors.muted)),
           Text(
-            '${_user.name}, ne içersin?',
+            '${user.name}, ne içersin?',
             style: GoogleFonts.instrumentSerif(fontSize: 38, color: AppColors.coffee, height: 1.0),
           ),
         ],
@@ -133,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLoyaltyCard() {
+    final user = widget.app.user;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
       child: GestureDetector(
@@ -149,11 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('DAMGA KARTIN', style: TextStyle(fontSize: 11, color: AppColors.cream.withValues(alpha:0.7), letterSpacing: 0.4)),
+                    Text('DAMGA KARTIN', style: TextStyle(fontSize: 11, color: AppColors.cream.withValues(alpha: 0.7), letterSpacing: 0.4)),
                     const SizedBox(height: 8),
                     Row(
                       children: List.generate(5, (i) {
-                        final filled = i < _user.stamps;
+                        final filled = i < user.stamps;
                         return Padding(
                           padding: const EdgeInsets.only(right: 6),
                           child: Container(
@@ -163,9 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               shape: BoxShape.circle,
                               color: filled ? AppColors.accent : Colors.transparent,
                               border: Border.all(
-                                color: filled ? AppColors.accent : AppColors.cream.withValues(alpha:0.4),
+                                color: filled ? AppColors.accent : AppColors.cream.withValues(alpha: 0.4),
                                 width: 1.5,
-                                style: filled ? BorderStyle.solid : BorderStyle.solid,
                               ),
                             ),
                             child: filled
@@ -177,8 +190,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${5 - _user.stamps} kahve daha → bedava bir kahve',
-                      style: TextStyle(fontSize: 12, color: AppColors.cream.withValues(alpha:0.85)),
+                      '${5 - user.stamps} kahve daha → bedava bir kahve',
+                      style: TextStyle(fontSize: 12, color: AppColors.cream.withValues(alpha: 0.85)),
                     ),
                   ],
                 ),
@@ -192,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCampaigns() {
+    final campaigns = widget.app.campaigns;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,9 +224,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
-            itemCount: KeopiData.campaigns.length,
+            itemCount: campaigns.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => _CampaignCard(campaign: KeopiData.campaigns[i]),
+            itemBuilder: (_, i) => _CampaignCard(campaign: campaigns[i]),
           ),
         ),
         const SizedBox(height: 20),
@@ -307,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openProduct(BuildContext context, KeopiProduct product) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ProductDetailScreen(product: product, cart: widget.cart),
+      builder: (_) => ProductDetailScreen(product: product, cart: widget.cart, app: widget.app),
     ));
   }
 
@@ -370,7 +384,7 @@ class _CampaignCard extends StatelessWidget {
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha:0.08),
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -380,7 +394,7 @@ class _CampaignCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -396,7 +410,7 @@ class _CampaignCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 campaign.subtitle,
-                style: TextStyle(fontSize: 11, color: Color(campaign.fgColor).withValues(alpha:0.85), height: 1.35),
+                style: TextStyle(fontSize: 11, color: Color(campaign.fgColor).withValues(alpha: 0.85), height: 1.35),
               ),
             ],
           ),

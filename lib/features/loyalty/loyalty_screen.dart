@@ -2,27 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
+import '../../core/providers/app_provider.dart';
 
 class LoyaltyScreen extends StatelessWidget {
-  const LoyaltyScreen({super.key});
+  final AppProvider app;
+  const LoyaltyScreen({super.key, required this.app});
 
   @override
   Widget build(BuildContext context) {
-    final user = KeopiData.user;
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
-          SliverToBoxAdapter(child: _buildHeader()),
-          SliverToBoxAdapter(child: _buildStampCard(user)),
-          SliverToBoxAdapter(child: _buildPointsBalance(user)),
-          SliverToBoxAdapter(child: _buildTierProgress(user)),
-          SliverToBoxAdapter(child: _buildRewards(user)),
-          SliverToBoxAdapter(child: _buildReferral()),
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-        ],
-      ),
+    return ListenableBuilder(
+      listenable: app,
+      builder: (context, _) {
+        final user = app.user;
+        return Scaffold(
+          backgroundColor: AppColors.bg,
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
+              SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildStampCard(user)),
+              SliverToBoxAdapter(child: _buildPointsBalance(user)),
+              SliverToBoxAdapter(child: _buildTierProgress(user)),
+              SliverToBoxAdapter(child: _buildRewards(user)),
+              SliverToBoxAdapter(child: _buildReferral()),
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -196,46 +203,49 @@ class LoyaltyScreen extends StatelessWidget {
         children: [
           Text('Puanını harca', style: GoogleFonts.instrumentSerif(fontSize: 18, color: AppColors.coffee, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
-          ...KeopiData.rewards.map((r) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Opacity(
-              opacity: r.available ? 1.0 : 0.55,
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44, height: 44,
-                      decoration: const BoxDecoration(color: AppColors.tagBg, shape: BoxShape.circle),
-                      child: const Icon(Icons.card_giftcard_rounded, color: AppColors.accent, size: 20),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(r.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee)),
-                          Text('${r.points} puan', style: const TextStyle(fontSize: 12, color: AppColors.muted, fontFamily: 'monospace')),
-                        ],
+          ...KeopiData.rewards.map((r) {
+            final canAfford = user.points >= r.points;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Opacity(
+                opacity: canAfford ? 1.0 : 0.55,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44, height: 44,
+                        decoration: const BoxDecoration(color: AppColors.tagBg, shape: BoxShape.circle),
+                        child: const Icon(Icons.card_giftcard_rounded, color: AppColors.accent, size: 20),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: r.available ? AppColors.coffee : AppColors.cream,
-                        borderRadius: BorderRadius.circular(999),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(r.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee)),
+                            Text('${r.points} puan', style: const TextStyle(fontSize: 12, color: AppColors.muted, fontFamily: 'monospace')),
+                          ],
+                        ),
                       ),
-                      child: Text(
-                        r.available ? 'Kullan' : 'Kilitli',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: r.available ? AppColors.cream : AppColors.muted),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: canAfford ? AppColors.coffee : AppColors.cream,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          canAfford ? 'Kullan' : 'Kilitli',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: canAfford ? AppColors.cream : AppColors.muted),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          )),
+            );
+          }),
         ],
       ),
     );
