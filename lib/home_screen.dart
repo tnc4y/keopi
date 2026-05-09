@@ -1,54 +1,560 @@
 import 'package:flutter/material.dart';
-import 'package:keopi/branches/presentation/view/branches_screen.dart';
-import 'package:keopi/market/presentation/view/market_screen.dart';
-import 'package:keopi/menu/presentation/view/menu_screen.dart';
-import 'package:keopi/recommendation/presentation/view/recommendation_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'core/theme/app_colors.dart';
+import 'core/data/keopi_data.dart';
+import 'core/providers/cart_provider.dart';
+import 'features/menu/product_detail_screen.dart';
+import 'features/stores/stores_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final CartProvider cart;
+  final ValueChanged<int> onTabChange;
+
+  const HomeScreen({super.key, required this.cart, required this.onTabChange});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int currentPageIndex = 0;
+  final _user = KeopiData.user;
+  KeopiStore _store = KeopiData.stores[0];
 
   @override
   Widget build(BuildContext context) {
+    final popular = KeopiData.products.where((p) => p.category == 'popular').toList();
+    final newOnes = KeopiData.products.where((p) => p.tag == 'Yeni').toList();
+
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            currentPageIndex = index;
-          });
-        },
-        indicatorColor: Colors.amber,
-        selectedIndex: currentPageIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            icon: Icon(Icons.restaurant_menu_outlined),
-            selectedIcon: Icon(Icons.restaurant_menu),
-            label: 'Menu',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront),
-            label: 'Branches',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.shopping_bag_outlined),
-            selectedIcon: Icon(Icons.shopping_bag),
-            label: 'Market',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'AI',
+      backgroundColor: AppColors.bg,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 8)),
+          // Header
+          SliverToBoxAdapter(child: _buildHeader(context)),
+          // Greeting
+          SliverToBoxAdapter(child: _buildGreeting()),
+          // Loyalty mini-card
+          SliverToBoxAdapter(child: _buildLoyaltyCard()),
+          // Campaign carousel
+          SliverToBoxAdapter(child: _buildCampaigns()),
+          // Quick actions
+          SliverToBoxAdapter(child: _buildQuickActions()),
+          // Categories
+          SliverToBoxAdapter(child: _buildCategories()),
+          // Popular header
+          SliverToBoxAdapter(child: _sectionHeader('En popüler', onAll: () => widget.onTabChange(1))),
+          // Popular products
+          SliverToBoxAdapter(child: _buildPopular(popular)),
+          // New header
+          SliverToBoxAdapter(child: _sectionHeader('Yeni keşfet', trailing: _tag('YENİ'))),
+          // New products
+          SliverToBoxAdapter(child: _buildNewProducts(newOnes)),
+          // Tagline
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              child: Center(
+                child: Text(
+                  '"Bir fincan keopi, mahallenin sıcaklığı."',
+                  style: GoogleFonts.instrumentSerif(
+                    fontSize: 15,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.muted,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: <Widget>[MenuScreen(), BranchesScreen(), MarketScreen(), RecommendationScreen()][currentPageIndex],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StoresScreen(
+                  currentStore: _store,
+                  onPick: (s) {
+                    Navigator.pop(context);
+                    setState(() => _store = s);
+                  },
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 16, color: AppColors.accent),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SİPARİŞ ALAN', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500, letterSpacing: 0.2)),
+                    Row(
+                      children: [
+                        Text(_store.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee)),
+                        const Icon(Icons.chevron_right, size: 14, color: AppColors.coffee),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          _iconBtn(Icons.qr_code_2_rounded),
+          const SizedBox(width: 6),
+          _iconBtn(Icons.notifications_none_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGreeting() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Günaydın', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          Text(
+            '${_user.name}, ne içersin?',
+            style: GoogleFonts.instrumentSerif(fontSize: 38, color: AppColors.coffee, height: 1.0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoyaltyCard() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+      child: GestureDetector(
+        onTap: () => widget.onTabChange(2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.coffee,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('DAMGA KARTIN', style: TextStyle(fontSize: 11, color: AppColors.cream.withValues(alpha:0.7), letterSpacing: 0.4)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (i) {
+                        final filled = i < _user.stamps;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: filled ? AppColors.accent : Colors.transparent,
+                              border: Border.all(
+                                color: filled ? AppColors.accent : AppColors.cream.withValues(alpha:0.4),
+                                width: 1.5,
+                                style: filled ? BorderStyle.solid : BorderStyle.solid,
+                              ),
+                            ),
+                            child: filled
+                                ? const Icon(Icons.coffee_rounded, size: 14, color: Colors.white)
+                                : null,
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${5 - _user.stamps} kahve daha → bedava bir kahve',
+                      style: TextStyle(fontSize: 12, color: AppColors.cream.withValues(alpha:0.85)),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18, color: AppColors.cream),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCampaigns() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Row(
+            children: [
+              Text('Sana özel', style: GoogleFonts.instrumentSerif(fontSize: 18, color: AppColors.coffee, fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Text('Tümü', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 160,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: KeopiData.campaigns.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (_, i) => _CampaignCard(campaign: KeopiData.campaigns[i]),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+      child: Row(
+        children: [
+          Expanded(child: _QuickAction(icon: Icons.replay_rounded, label: 'Önceki siparişi tekrar et', onTap: () {})),
+          const SizedBox(width: 10),
+          Expanded(child: _QuickAction(icon: Icons.local_shipping_outlined, label: 'Pickup için sırala', onTap: () => widget.onTabChange(1))),
+          const SizedBox(width: 10),
+          Expanded(child: _QuickAction(icon: Icons.card_giftcard_rounded, label: 'Hediye gönder', onTap: () {})),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategories() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Text('Kategoriler', style: GoogleFonts.instrumentSerif(fontSize: 18, color: AppColors.coffee, fontWeight: FontWeight.w600)),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: KeopiData.categories.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final cat = KeopiData.categories[i];
+              return GestureDetector(
+                onTap: () => widget.onTabChange(1),
+                child: Container(
+                  width: 88,
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(cat.emoji, style: const TextStyle(fontSize: 26)),
+                      const SizedBox(height: 6),
+                      Text(cat.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.coffee), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildPopular(List<KeopiProduct> products) {
+    return SizedBox(
+      height: 220,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+        scrollDirection: Axis.horizontal,
+        itemCount: products.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (ctx, i) => _ProductCardLg(product: products[i], onTap: () => _openProduct(ctx, products[i])),
+      ),
+    );
+  }
+
+  Widget _buildNewProducts(List<KeopiProduct> products) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: Column(
+        children: products.map((p) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Builder(builder: (ctx) => _ProductRow(product: p, onTap: () => _openProduct(ctx, p))),
+        )).toList(),
+      ),
+    );
+  }
+
+  void _openProduct(BuildContext context, KeopiProduct product) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ProductDetailScreen(product: product, cart: widget.cart),
+    ));
+  }
+
+  Widget _sectionHeader(String title, {Widget? trailing, VoidCallback? onAll}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+      child: Row(
+        children: [
+          Text(title, style: GoogleFonts.instrumentSerif(fontSize: 18, color: AppColors.coffee, fontWeight: FontWeight.w600)),
+          const Spacer(),
+          ?trailing,
+          if (onAll != null) GestureDetector(onTap: onAll, child: Text('Tümü', style: TextStyle(fontSize: 13, color: AppColors.muted))),
+        ],
+      ),
+    );
+  }
+
+  Widget _tag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(999)),
+      child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent, letterSpacing: 0.4)),
+    );
+  }
+
+  Widget _iconBtn(IconData icon) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Icon(icon, size: 20, color: AppColors.coffee),
+    );
+  }
+}
+
+class _CampaignCard extends StatelessWidget {
+  final KeopiCampaign campaign;
+  const _CampaignCard({required this.campaign});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 280,
+      decoration: BoxDecoration(
+        color: Color(campaign.bgColor),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha:0.08),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha:0.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  campaign.tag,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(campaign.fgColor), letterSpacing: 0.4),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                campaign.title,
+                style: GoogleFonts.instrumentSerif(fontSize: 24, color: Color(campaign.fgColor), height: 1.1),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                campaign.subtitle,
+                style: TextStyle(fontSize: 11, color: Color(campaign.fgColor).withValues(alpha:0.85), height: 1.35),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickAction({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(color: AppColors.tagBg, shape: BoxShape.circle),
+              child: Icon(icon, size: 18, color: AppColors.accent),
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.coffee, height: 1.3), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductCardLg extends StatelessWidget {
+  final KeopiProduct product;
+  final VoidCallback onTap;
+  const _ProductCardLg({required this.product, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 160,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 120,
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(14)),
+              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 52))),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (product.tag != null) ...[
+                    _tagWidget(product.tag!),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(product.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.coffee, height: 1.2)),
+                  const SizedBox(height: 4),
+                  Text('₺${product.price}', style: GoogleFonts.jetBrainsMono(fontSize: 13, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tagWidget(String t) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(999)),
+      child: Text(t, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.accent, letterSpacing: 0.3)),
+    );
+  }
+}
+
+class _ProductRow extends StatelessWidget {
+  final KeopiProduct product;
+  final VoidCallback onTap;
+  const _ProductRow({required this.product, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
+              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30))),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (product.tag != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(999)),
+                      child: Text(product.tag!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(product.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.coffee)),
+                  const SizedBox(height: 2),
+                  Text(product.description, style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.35), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('₺${product.price}', style: GoogleFonts.jetBrainsMono(fontSize: 14, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                  child: const Icon(Icons.add, size: 18, color: Colors.white),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
