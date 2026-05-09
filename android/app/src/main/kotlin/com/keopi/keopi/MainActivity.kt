@@ -1,4 +1,4 @@
-package com.example.keopi
+package com.keopi.keopi
 
 import io.flutter.embedding.android.FlutterActivity
 
