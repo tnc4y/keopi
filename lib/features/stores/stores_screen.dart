@@ -28,8 +28,8 @@ class _StoresScreenState extends State<StoresScreen> {
   late KeopiStore _selected;
 
   static const _adanaCenter = LatLng(37.0044, 35.3350);
-  // card height + bottom padding = 86 + 10
-  static const _cardExtent = 96.0;
+  // card height + bottom padding = 90 + 10
+  static const _cardExtent = 102.0;
 
   @override
   void initState() {
@@ -86,7 +86,6 @@ class _StoresScreenState extends State<StoresScreen> {
 
   void _confirmSelection() {
     widget.onPick(_selected);
-    Navigator.pop(context);
   }
 
   @override

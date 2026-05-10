@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:keopi/auth/presentation/login_screen.dart';
 import 'package:keopi/core/providers/app_provider.dart';
 import 'package:keopi/core/providers/cart_provider.dart';
 import 'package:keopi/core/theme/app_colors.dart';
@@ -11,16 +13,40 @@ import 'package:keopi/home_screen.dart';
 class KeopiApp extends StatelessWidget {
   const KeopiApp({super.key});
 
-  static final CartProvider _cart = CartProvider();
-  static final AppProvider _app = AppProvider();
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'keopi',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: AppShell(cart: _cart, app: _app),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AppColors.bg,
+            body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+          );
+        }
+        if (snapshot.hasData) {
+          return AppShell(
+            key: ValueKey(snapshot.data!.uid),
+            cart: CartProvider(),
+            app: AppProvider(),
+          );
+        }
+        return const LoginScreen();
+      },
     );
   }
 }

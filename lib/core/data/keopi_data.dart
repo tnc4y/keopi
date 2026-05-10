@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class KeopiProduct {
   final String id;
   final String category;
@@ -19,20 +21,20 @@ class KeopiProduct {
     required this.kcal,
   });
 
-  String get emoji {
+  IconData get icon {
     switch (category) {
       case 'cold':
-        return '🧊';
+        return Icons.local_drink;
       case 'hot':
-        return '☕';
+        return Icons.local_cafe;
       case 'tea':
-        return '🍵';
+        return Icons.spa;
       case 'food':
-        return '🥐';
+        return Icons.lunch_dining;
       case 'sweet':
-        return '🍰';
+        return Icons.cake;
       default:
-        return '☕';
+        return Icons.local_cafe;
     }
   }
 }
@@ -40,9 +42,9 @@ class KeopiProduct {
 class KeopiCategory {
   final String id;
   final String name;
-  final String emoji;
+  final IconData icon;
 
-  const KeopiCategory({required this.id, required this.name, required this.emoji});
+  const KeopiCategory({required this.id, required this.name, required this.icon});
 }
 
 class KeopiSize {
@@ -184,12 +186,12 @@ class KeopiData {
   );
 
   static const categories = [
-    KeopiCategory(id: 'popular', name: 'En Popüler', emoji: '⭐'),
-    KeopiCategory(id: 'cold', name: 'Soğuk İçecekler', emoji: '🧊'),
-    KeopiCategory(id: 'hot', name: 'Sıcak Kahveler', emoji: '☕'),
-    KeopiCategory(id: 'tea', name: 'Çay & Bitki', emoji: '🍃'),
-    KeopiCategory(id: 'food', name: 'Atıştırmalık', emoji: '🥐'),
-    KeopiCategory(id: 'sweet', name: 'Tatlılar', emoji: '🍰'),
+    KeopiCategory(id: 'popular', name: 'En Popüler', icon: Icons.star_rounded),
+    KeopiCategory(id: 'cold', name: 'Soğuk İçecekler', icon: Icons.ac_unit),
+    KeopiCategory(id: 'hot', name: 'Sıcak Kahveler', icon: Icons.local_cafe),
+    KeopiCategory(id: 'tea', name: 'Çay & Bitki', icon: Icons.spa),
+    KeopiCategory(id: 'food', name: 'Atıştırmalık', icon: Icons.lunch_dining),
+    KeopiCategory(id: 'sweet', name: 'Tatlılar', icon: Icons.cake),
   ];
 
   static const products = [

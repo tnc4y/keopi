@@ -343,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(cat.emoji, style: const TextStyle(fontSize: 26, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji'])),
+                      Icon(cat.icon, size: 26, color: AppColors.coffee),
                       const SizedBox(height: 6),
                       Text(cat.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.coffee), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],
@@ -541,7 +541,7 @@ class _ProductCardLg extends StatelessWidget {
               height: 100,
               margin: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(14)),
-              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 44, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji']))),
+              child: Center(child: Icon(product.icon, size: 44, color: AppColors.coffee)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 14),
@@ -595,7 +595,7 @@ class _ProductRow extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
-              child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 30, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji']))),
+              child: Center(child: Icon(product.icon, size: 30, color: AppColors.coffee)),
             ),
             const SizedBox(width: 14),
             Expanded(

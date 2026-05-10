@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/keopi_data.dart';
 import '../providers/cart_provider.dart';
 
 class FirestoreService {
   static final _db = FirebaseFirestore.instance;
-  static const userId = 'user_001';
+  static String get userId =>
+      FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
 
   // ── Products ──────────────────────────────────────────────────────────────
 

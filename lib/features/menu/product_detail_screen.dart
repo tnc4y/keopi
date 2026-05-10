@@ -72,7 +72,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           height: 320,
           color: AppColors.cream,
           child: Center(
-            child: Text(widget.product.emoji, style: const TextStyle(fontSize: 110, fontFamilyFallback: ['Apple Color Emoji', 'Noto Color Emoji'])),
+            child: Icon(widget.product.icon, size: 110, color: AppColors.coffee),
           ),
         ),
         Positioned(
@@ -172,9 +172,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: Column(
                 children: [
-                  Text(
-                    s.id == 'small' ? '🥤' : s.id == 'medium' ? '☕' : '🧋',
-                    style: TextStyle(fontSize: selected ? 22 : 18, fontFamilyFallback: const ['Apple Color Emoji', 'Noto Color Emoji']),
+                  Icon(
+                    Icons.local_cafe,
+                    size: s.id == 'small' ? 18 : s.id == 'medium' ? 22 : 26,
+                    color: selected ? AppColors.cream : AppColors.coffee,
                   ),
                   const SizedBox(height: 4),
                   Text(s.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? AppColors.cream : AppColors.coffee)),

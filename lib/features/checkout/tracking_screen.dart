@@ -132,7 +132,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         color: AppColors.accent,
                         backgroundColor: AppColors.tagBg,
                       ),
-                      const Text('☕', style: TextStyle(fontSize: 50)),
+                      const Icon(Icons.local_cafe, size: 50, color: AppColors.accent),
                     ],
                   ),
           ),

@@ -112,7 +112,7 @@ class CartScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
       child: Column(
         children: [
-          const Text('☕', style: TextStyle(fontSize: 80)),
+          const Icon(Icons.local_cafe, size: 80, color: AppColors.accent),
           const SizedBox(height: 16),
           Text('Sepetin boş', style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.coffee)),
           const SizedBox(height: 6),
@@ -228,7 +228,7 @@ class _CartRow extends StatelessWidget {
           Container(
             width: 64, height: 64,
             decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
-            child: Center(child: Text(item.product.emoji, style: const TextStyle(fontSize: 30))),
+            child: Center(child: Icon(item.product.icon, size: 30, color: AppColors.coffee)),
           ),
           const SizedBox(width: 12),
           Expanded(

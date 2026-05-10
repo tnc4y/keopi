@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
@@ -136,9 +137,53 @@ class ProfileScreen extends StatelessWidget {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text('keopi v2.4.1  ·  ÇIKIŞ YAP', style: TextStyle(fontSize: 11, color: AppColors.muted, letterSpacing: 0.4)),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              backgroundColor: AppColors.card,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              title: Text('Çıkış yap', style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.coffee)),
+                              content: const Text('Hesabından çıkmak istediğine emin misin?', style: TextStyle(fontSize: 14, color: AppColors.muted)),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Vazgeç', style: TextStyle(color: AppColors.muted)),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Çıkış yap', style: TextStyle(color: Color(0xFFB85A2D), fontWeight: FontWeight.w700)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (ok == true) await FirebaseAuth.instance.signOut();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.line),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.logout_rounded, size: 16, color: Color(0xFFB85A2D)),
+                              SizedBox(width: 8),
+                              Text('Çıkış yap', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFB85A2D))),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('keopi v2.4.1', style: TextStyle(fontSize: 11, color: AppColors.muted, letterSpacing: 0.4)),
+                    ],
                   ),
                 ),
               ),
