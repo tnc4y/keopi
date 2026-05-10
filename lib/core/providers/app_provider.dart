@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../data/keopi_data.dart';
 import '../services/firestore_service.dart';
+import '../services/sample_data_service.dart';
 
 class AppProvider extends ChangeNotifier {
   List<KeopiProduct> _products = [];
@@ -47,6 +48,9 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     try {
+      if (await SampleDataService.needsStoreCoordinateUpdate()) {
+        await SampleDataService.seedStores();
+      }
       final results = await Future.wait([
         FirestoreService.fetchProducts(),
         FirestoreService.fetchStores(),

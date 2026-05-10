@@ -27,6 +27,13 @@ class SampleDataService {
     await batch.commit();
   }
 
+  static Future<bool> needsStoreCoordinateUpdate() async {
+    final snap = await _db.collection('stores').limit(1).get();
+    if (snap.docs.isEmpty) return true;
+    final data = snap.docs.first.data();
+    return data['lat'] == null;
+  }
+
   static Future<void> seedStores() async {
     final batch = _db.batch();
     for (final s in KeopiData.stores) {
@@ -40,6 +47,8 @@ class SampleDataService {
         'hours': s.hours,
         'favorite': s.favorite,
         'tag': s.tag,
+        'lat': s.lat,
+        'lng': s.lng,
       });
     }
     await batch.commit();
