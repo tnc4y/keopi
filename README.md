@@ -140,6 +140,97 @@ Keopi; kullanıcıların en sevdikleri içecek ve atıştırmalıkları kolayca 
 
 ---
 
+## Firestore Veritabanı Şeması
+
+Uygulama 5 ana koleksiyon kullanır. Okuma işlemleri tek seferlik (`get`) ya da gerçek zamanlı (`snapshots`) olarak yapılır; yazma işlemleri atomik `batch` ile gerçekleştirilir.
+
+```
+Firestore
+│
+├── products/                          ← Sabit menü verisi (seed ile yüklenir)
+│   └── {productId}                    ← Ör: "p1", "c2", "h3"
+│       ├── id          : String
+│       ├── category    : String       ← "popular" | "cold" | "hot" | "tea" | "food" | "sweet"
+│       ├── name        : String       ← Ör: "Cortado"
+│       ├── nameEn      : String
+│       ├── price       : Number       ← Türk Lirası (₺)
+│       ├── description : String
+│       ├── kcal        : Number
+│       └── tag         : String?      ← Ör: "Bestseller" | "Yeni" | null
+│
+├── stores/                            ← Adana şube listesi (seed ile yüklenir)
+│   └── {storeId}                      ← Ör: "s1" … "s5"
+│       ├── id       : String
+│       ├── name     : String          ← Ör: "Ziyapaşa"
+│       ├── address  : String
+│       ├── distance : String          ← Ör: "0.4 km"
+│       ├── open     : Boolean
+│       ├── hours    : String          ← Ör: "07:00 – 23:00"
+│       ├── favorite : Boolean
+│       ├── tag      : String?         ← Ör: "Atölye" | null
+│       ├── lat      : Number          ← Google Maps enlem
+│       └── lng      : Number          ← Google Maps boylam
+│
+├── campaigns/                         ← Ana ekran kampanya kartları
+│   └── {campaignId}                   ← Ör: "c1", "c2", "c3"
+│       ├── id       : String
+│       ├── title    : String
+│       ├── subtitle : String
+│       ├── tag      : String          ← Ör: "Sınırlı süre"
+│       ├── bgColor  : Number          ← ARGB int (0xFFCCBBAA)
+│       ├── fgColor  : Number
+│       └── order    : Number          ← Sıralama indeksi
+│
+├── users/                             ← Kullanıcı profili ve sadakat verisi
+│   └── {uid}                          ← Firebase Auth UID (kayıtta otomatik oluşur)
+│       ├── name        : String
+│       ├── points      : Number       ← Sadakat puanı (her siparişte +total÷10)
+│       ├── stamps      : Number       ← Damga sayısı (her siparişte +1)
+│       ├── memberSince : String       ← Ör: "Mayıs 2026"
+│       ├── tier        : String       ← "Demlik" | "Cezve" | …
+│       ├── nextTier    : String
+│       └── birthday    : String
+│
+└── orders/                            ← Tüm siparişler (kullanıcıya göre filtrelenir)
+    └── {orderId}                      ← Otomatik ID
+        ├── userId       : String      ← Firebase Auth UID
+        ├── storeId      : String
+        ├── storeName    : String
+        ├── storeAddress : String
+        ├── status       : String      ← "pending" → "preparing" → "ready" → "completed"
+        ├── subtotal     : Number      ← ₺
+        ├── tip          : Number      ← ₺
+        ├── pointsDiscount: Number     ← ₺ (kullanılan puan)
+        ├── total        : Number      ← ₺
+        ├── payMethod    : String      ← "card" | "apple_pay" | "qr"
+        ├── createdAt    : Timestamp   ← Server timestamp
+        ├── createdAtMs  : Number      ← Milisaniye (fallback sıralama için)
+        └── items        : Array
+            └── {item}
+                ├── productId  : String
+                ├── name       : String
+                ├── qty        : Number
+                ├── sizeId     : String   ← "small" | "medium" | "large"
+                ├── milkId     : String   ← "whole" | "oat" | "almond" | …
+                ├── shotIndex  : Number   ← 0=1shot, 1=2shot, 2=3shot
+                ├── syrupId    : String?
+                ├── note       : String
+                ├── unitPrice  : Number
+                └── mods       : String  ← Ör: "Orta · Yulaf sütü"
+```
+
+### Okuma / Yazma Stratejisi
+
+| Koleksiyon | Okuma | Yazma | Notlar |
+|---|---|---|---|
+| `products` | Tek seferlik `get` | Seed script | Menü nadiren değişir |
+| `stores` | Tek seferlik `get` | Seed script | Koordinat eksikse otomatik güncellenir |
+| `campaigns` | Tek seferlik `get` | Seed script | `order` alanına göre sıralanır |
+| `users` | Gerçek zamanlı stream | Kayıtta set, siparişte batch | Auth UID = doküman ID |
+| `orders` | Gerçek zamanlı stream | Sipariş anında batch | `userId` ile filtrelenir, client-side sıralanır |
+
+---
+
 ## Kurulum
 
 ### Gereksinimler
