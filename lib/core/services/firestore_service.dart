@@ -45,6 +45,8 @@ class FirestoreService {
       hours: m['hours'] as String,
       favorite: m['favorite'] as bool? ?? false,
       tag: m['tag'] as String?,
+      lat: (m['lat'] as num?)?.toDouble() ?? 37.0044,
+      lng: (m['lng'] as num?)?.toDouble() ?? 35.3312,
     );
   }
 

@@ -79,6 +79,8 @@ class KeopiStore {
   final String hours;
   final bool favorite;
   final String? tag;
+  final double lat;
+  final double lng;
 
   const KeopiStore({
     required this.id,
@@ -89,6 +91,8 @@ class KeopiStore {
     required this.hours,
     this.favorite = false,
     this.tag,
+    required this.lat,
+    required this.lng,
   });
 }
 
@@ -262,11 +266,11 @@ class KeopiData {
   ];
 
   static const stores = [
-    KeopiStore(id: 's1', name: 'Bağdat Caddesi', address: 'Bağdat Cd. No:142, Kadıköy', distance: '0.4 km', open: true, hours: '07:00 – 23:00', favorite: true),
-    KeopiStore(id: 's2', name: 'Caferağa', address: 'Moda Cd. No:18, Kadıköy', distance: '1.2 km', open: true, hours: '07:30 – 22:00'),
-    KeopiStore(id: 's3', name: 'Karaköy Liman', address: 'Kemankeş Cd. No:33', distance: '4.8 km', open: true, hours: '07:00 – 24:00'),
-    KeopiStore(id: 's4', name: 'Bebek Sahil', address: 'Cevdet Paşa Cd. No:71', distance: '8.1 km', open: false, hours: '08:00 – 22:00'),
-    KeopiStore(id: 's5', name: 'Nişantaşı Atölye', address: 'Teşvikiye Cd. No:9', distance: '6.4 km', open: true, hours: '08:00 – 22:00', tag: 'Atölye'),
+    KeopiStore(id: 's1', name: 'Ziyapaşa', address: 'Ziyapaşa Blv. No:44, Seyhan/Adana', distance: '0.4 km', open: true, hours: '07:00 – 23:00', favorite: true, lat: 37.0044, lng: 35.3312),
+    KeopiStore(id: 's2', name: 'Reşatbey', address: 'İnönü Cd. No:18, Reşatbey/Adana', distance: '1.2 km', open: true, hours: '07:30 – 22:00', lat: 36.9999, lng: 35.3192),
+    KeopiStore(id: 's3', name: 'Çukurova Forum', address: 'M.Ali Paşa Mah. No:3, Çukurova/Adana', distance: '4.8 km', open: true, hours: '07:00 – 24:00', lat: 37.0213, lng: 35.3590),
+    KeopiStore(id: 's4', name: '5 Ocak Meydan', address: '5 Ocak Meydan No:9, Seyhan/Adana', distance: '2.1 km', open: false, hours: '08:00 – 22:00', lat: 36.9918, lng: 35.3272),
+    KeopiStore(id: 's5', name: 'Güzelevler Atölye', address: 'Güzelevler Mah. No:7, Sarıçam/Adana', distance: '6.4 km', open: true, hours: '08:00 – 22:00', tag: 'Atölye', lat: 37.0147, lng: 35.3618),
   ];
 
   static const rewards = [

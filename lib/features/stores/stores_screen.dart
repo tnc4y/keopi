@@ -1,14 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/data/keopi_data.dart';
 
-class StoresScreen extends StatelessWidget {
+class StoresScreen extends StatefulWidget {
   final List<KeopiStore> stores;
   final KeopiStore currentStore;
   final ValueChanged<KeopiStore> onPick;
 
   const StoresScreen({super.key, required this.stores, required this.currentStore, required this.onPick});
+
+  @override
+  State<StoresScreen> createState() => _StoresScreenState();
+}
+
+class _StoresScreenState extends State<StoresScreen> {
+  GoogleMapController? _mapController;
+
+  static const _adanaCenter = LatLng(37.0044, 35.3350);
+
+  Set<Marker> _buildMarkers() {
+    return widget.stores.map((s) {
+      final selected = widget.currentStore.id == s.id;
+      return Marker(
+        markerId: MarkerId(s.id),
+        position: LatLng(s.lat, s.lng),
+        infoWindow: InfoWindow(title: s.name, snippet: s.address),
+        icon: selected
+            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange)
+            : BitmapDescriptor.defaultMarkerWithHue(22),
+        onTap: () => _selectStore(s),
+      );
+    }).toSet();
+  }
+
+  void _selectStore(KeopiStore s) {
+    widget.onPick(s);
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(s.lat, s.lng), 15),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +57,13 @@ class StoresScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      width: 38, height: 38,
-                      decoration: BoxDecoration(color: AppColors.card, shape: BoxShape.circle, border: Border.all(color: AppColors.line)),
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.line),
+                      ),
                       child: const Icon(Icons.chevron_left_rounded, color: AppColors.coffee),
                     ),
                   ),
@@ -36,13 +73,17 @@ class StoresScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Search
+          // Search bar
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.line)),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.line),
+                ),
                 child: const Row(
                   children: [
                     Icon(Icons.search_rounded, size: 18, color: AppColors.muted),
@@ -53,37 +94,26 @@ class StoresScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Map placeholder
+          // Google Map
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-              child: Container(
-                height: 140,
-                decoration: BoxDecoration(
-                  color: AppColors.cream,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Grid pattern
-                    CustomPaint(size: const Size(double.infinity, 140), painter: _GridPainter()),
-                    // Center pin
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
-                      ),
-                      child: const Icon(Icons.location_on_rounded, size: 18, color: Colors.white),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  height: 240,
+                  child: GoogleMap(
+                    initialCameraPosition: const CameraPosition(
+                      target: _adanaCenter,
+                      zoom: 13,
                     ),
-                    // Dots
-                    const Positioned(top: 30, left: 80, child: _MapDot()),
-                    const Positioned(bottom: 28, right: 70, child: _MapDot()),
-                    const Positioned(top: 60, right: 50, child: _MapDot()),
-                  ],
+                    markers: _buildMarkers(),
+                    onMapCreated: (c) => _mapController = c,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                  ),
                 ),
               ),
             ),
@@ -92,7 +122,10 @@ class StoresScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text('YAKINDAKI MAĞAZALAR · ${stores.length}', style: const TextStyle(fontSize: 12, color: AppColors.muted, letterSpacing: 0.3)),
+              child: Text(
+                'ADANA MAĞAZALARIMIz · ${widget.stores.length}',
+                style: const TextStyle(fontSize: 12, color: AppColors.muted, letterSpacing: 0.3),
+              ),
             ),
           ),
           // Store list
@@ -101,25 +134,36 @@ class StoresScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (ctx, i) {
-                  final s = stores[i];
-                  final selected = currentStore.id == s.id;
+                  final s = widget.stores[i];
+                  final selected = widget.currentStore.id == s.id;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: GestureDetector(
-                      onTap: () => onPick(s),
+                      onTap: () => _selectStore(s),
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: AppColors.card,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: selected ? AppColors.accent : AppColors.line, width: selected ? 2 : 1),
+                          border: Border.all(
+                            color: selected ? AppColors.accent : AppColors.line,
+                            width: selected ? 2 : 1,
+                          ),
                         ),
                         child: Row(
                           children: [
                             Container(
-                              width: 44, height: 44,
-                              decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(12)),
-                              child: const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 20),
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: selected ? AppColors.accent.withValues(alpha: 0.12) : AppColors.tagBg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.location_on_rounded,
+                                color: selected ? AppColors.accent : AppColors.accent,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -128,41 +172,88 @@ class StoresScreen extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Text(s.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.coffee)),
-                                      if (s.favorite) ...[const SizedBox(width: 6), const Icon(Icons.favorite_rounded, size: 14, color: AppColors.accent)],
+                                      Text(
+                                        s.name,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.coffee,
+                                        ),
+                                      ),
+                                      if (s.favorite) ...[
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.favorite_rounded, size: 14, color: AppColors.accent),
+                                      ],
                                       if (s.tag != null) ...[
                                         const SizedBox(width: 6),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(color: AppColors.tagBg, borderRadius: BorderRadius.circular(999)),
-                                          child: Text(s.tag!, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.tagBg,
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            s.tag!,
+                                            style: const TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.accent,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ],
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(s.address, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                                  Text(
+                                    s.address,
+                                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                  ),
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      Container(width: 6, height: 6, decoration: BoxDecoration(color: s.open ? AppColors.success : const Color(0xFFB85A2D), shape: BoxShape.circle)),
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: s.open ? AppColors.success : const Color(0xFFB85A2D),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
                                       const SizedBox(width: 4),
-                                      Text(s.open ? 'Açık' : 'Kapalı', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: s.open ? AppColors.success : const Color(0xFFB85A2D))),
+                                      Text(
+                                        s.open ? 'Açık' : 'Kapalı',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: s.open ? AppColors.success : const Color(0xFFB85A2D),
+                                        ),
+                                      ),
                                       const SizedBox(width: 4),
-                                      Text('· ${s.hours}', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                                      Text(
+                                        '· ${s.hours}',
+                                        style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                      ),
                                     ],
                                   ),
                                 ],
                               ),
                             ),
-                            Text(s.distance, style: const TextStyle(fontSize: 12, color: AppColors.muted, fontFamily: 'monospace')),
+                            Text(
+                              s.distance,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.muted,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   );
                 },
-                childCount: stores.length,
+                childCount: widget.stores.length,
               ),
             ),
           ),
@@ -171,30 +262,4 @@ class StoresScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MapDot extends StatelessWidget {
-  const _MapDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.coffee, shape: BoxShape.circle));
-  }
-}
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColors.line..strokeWidth = 1;
-    const step = 20.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
 }
