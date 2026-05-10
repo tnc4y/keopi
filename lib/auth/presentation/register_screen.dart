@@ -42,6 +42,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       await cred.user?.updateDisplayName(_nameCtrl.text.trim());
       await _createUserDoc(cred.user!.uid, _nameCtrl.text.trim());
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } on FirebaseAuthException catch (e) {
       setState(() => _error = _authError(e.code));
     } finally {
